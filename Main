@@ -1,0 +1,323 @@
+#include <iostream>
+#include <cstdlib>
+#include <ctime>
+
+//#include "polje.h"
+#include "pokazivaci.h"
+
+using namespace std;
+
+int Okreni(queue *red, int br=0)
+{
+  zapis pomocni_zapis = FrontQ(red);
+	DeQueueQ(red);
+	
+	if(!IsEmptyQ(red)){
+		br=Okreni(red, ++br);
+	}
+	EnQueueQ(pomocni_zapis,red);
+	
+	return br;
+}
+
+struct cetiri{ int a, b;
+	short prio;
+	short tran;
+};
+cetiri *polje;
+int brojac, broj_zapisa;
+void Generiranje_zapisa()
+{
+	brojac = 0;
+	do{
+		cout << "Unesite zeljeni broj zapisa u red : ";
+		cin >> broj_zapisa;
+	}while(broj_zapisa<1);
+	
+	polje = new cetiri[broj_zapisa];
+	
+	cout<<"Zapis se kreira......."<<endl;
+	for(int i=0; i<broj_zapisa; i++) {
+		polje[i].a=rand()%400+100;
+		polje[i].b=rand()%400+100;
+		polje[i].prio=rand()%6;
+		polje[i].tran=rand()%4;
+		
+		if(polje[i].prio==0 || polje[i].prio==1)
+			polje[i].tran=rand()%3;
+		
+		if(polje[i].prio==5)
+			polje[i].tran=2;
+		
+		cout<<"Zapis_"<<i+1<<" generiran.   ";
+		cout<<"Prioritet: "<<polje[i].prio+1;
+		cout<<"   Transakcija: "<<polje[i].tran+1<<endl;
+	}
+}
+
+void Glavni(queue *red)
+{
+	if(IsEmptyQ(red))
+		return;
+	cout<<"Stanje na glavnom red - klijenti u glavnom redu:"<<endl<<endl;
+	queue *red_pomocni = new queue;
+	InitQ(red_pomocni);
+	while(!IsEmptyQ(red)){
+		EnQueueQ(FrontQ(red), red_pomocni);
+		DeQueueQ(red);
+	}
+	while(!IsEmptyQ(red_pomocni)){
+		zapis Zapis=FrontQ(red_pomocni);
+		 cout<<endl<<"Ime i prezime klijenta: "<<Zapis.ime<<" "<<Zapis.prezime<<endl;
+		 cout<<"Datum rodjenja D/M/G: "<<Zapis.dan_rodjenja<<"/"<<Zapis.mjesec_rodjenja<<"/"<<Zapis.godina_rodjenja<<endl;
+		 cout<<"Stanje na racunu: "<<endl;
+		 cout<<"TEKUCI: "<<Zapis.stanje_racuna_tekuceg<<endl;
+		 cout<<"DEVIZNI: "<<Zapis.stanje_racuna_deviznog<<endl;
+		 cout<<"Prioritet: "<<Zapis.prioritet+1<<"   Transakcija: "<<Zapis.transakcija+1<<endl;
+		EnQueueQ(Zapis,red);
+		DeQueueQ(red_pomocni);
+	}
+	delete red_pomocni;
+}
+
+void Novi(queue *red)
+{
+	zapis Zapis;
+	while(brojac<broj_zapisa){
+		cout<<"Zapis "<<brojac+1<<" od "<<broj_zapisa<<" ukupno."<<endl;
+		Zapis.prioritet=polje[brojac].prio;
+		Zapis.transakcija=polje[brojac].tran;
+		cout<<"Prioritet: "<<Zapis.prioritet+1<<endl;
+		cout<<"Transakcija: "<<Zapis.transakcija+1<<endl;
+		cout<<"Ime: ";
+		cin.ignore();
+		cin.getline(Zapis.ime,35);
+		cout<<"Prezime: ";
+		cin.getline(Zapis.prezime,35);
+		cout<<"Datum rodjenja:\ndan: ";
+		cin>>Zapis.dan_rodjenja;
+		cout<<"mjesec: ";
+		cin>>Zapis.mjesec_rodjenja;
+		cout<<"godina: ";
+		cin>>Zapis.godina_rodjenja;
+		cout<<"Stanje na racunu: "<<endl;
+		cout<<"Tekuci: ";
+		cin>>Zapis.stanje_racuna_tekuceg;
+		cout<<"Devizni: ";
+		cin>>Zapis.stanje_racuna_deviznog;
+		cout<<endl;
+		EnQueueQ(Zapis,red);
+		brojac++;
+	}
+	
+	if(IsEmptyQ(red))
+		return;
+	
+	queue *red_pomocni = new queue;
+	InitQ(red_pomocni);
+	queue *red_2 = new queue;
+	InitQ(red_2);
+	for(int pr=0; pr<6; pr++) {
+		while(!IsEmptyQ(red)){
+			zapis Zapis=FrontQ(red);
+			DeQueueQ(red);
+			if(Zapis.prioritet == pr){ EnQueueQ(Zapis, red_2);
+			}else{ EnQueueQ(Zapis, red_pomocni);
+			}
+		}
+		while(!IsEmptyQ(red_pomocni)){
+			zapis Zapis=FrontQ(red_pomocni);
+			DeQueueQ(red_pomocni);
+			EnQueueQ(Zapis, red);
+		}
+	}
+	while(!IsEmptyQ(red_2)){
+		zapis Zapis=FrontQ(red_2);
+		DeQueueQ(red_2);
+		EnQueueQ(Zapis, red);
+	}
+	delete red_2;
+	
+	while(!IsEmptyQ(red)){
+		EnQueueQ(FrontQ(red), red_pomocni);
+		DeQueueQ(red);
+	}
+	while(!IsEmptyQ(red_pomocni)){
+		zapis Zapis=FrontQ(red_pomocni);
+		if(Zapis.stanje_racuna_deviznog>5000){ 
+			cout<<endl<<"Ime i prezime klijenta: "<<Zapis.ime<<" "<<Zapis.prezime<<endl;
+			cout<<"Datum rodjenja D/M/G: "<<Zapis.dan_rodjenja<<"/"<<Zapis.mjesec_rodjenja<<"/"<<Zapis.godina_rodjenja<<endl;
+			cout<<"Stanje na racunu: "<<endl;
+			cout<<"TEKUCI: "<<Zapis.stanje_racuna_tekuceg<<endl;
+			cout<<"DEVIZNI: "<<Zapis.stanje_racuna_deviznog<<endl;
+			cout<<"Prioritet: "<<Zapis.prioritet+1<<"   Transakcija: "<<Zapis.transakcija+1<<endl;
+		}
+		EnQueueQ(Zapis,red);
+		DeQueueQ(red_pomocni);
+	}
+	delete red_pomocni;
+}
+
+void Brza_transakcija(queue *red)
+{
+	if(IsEmptyQ(red))
+		return;
+	queue *red_pomocni = new queue;
+	InitQ(red_pomocni);
+	while(!IsEmptyQ(red)){
+		EnQueueQ(FrontQ(red), red_pomocni);
+		DeQueueQ(red);
+	}
+	cout<<"Brza_transakcija red-stanje u brzom redu: ";
+	cout<<endl<<endl;
+	while(!IsEmptyQ(red_pomocni)){
+		zapis Zapis=FrontQ(red_pomocni);
+		if(Zapis.transakcija==2){
+			cout<<endl<<"Ime i prezime klijenta: "<<Zapis.ime<<" "<<Zapis.prezime<<endl;
+			cout<<"Datum rodjenja D/M/G: "<<Zapis.dan_rodjenja<<"/"<<Zapis.mjesec_rodjenja<<"/"<<Zapis.godina_rodjenja<<endl;
+			cout<<"Stanje na racunu: "<<endl;
+			cout<<"TEKUCI: "<<Zapis.stanje_racuna_tekuceg<<endl;
+			cout<<"DEVIZNI: "<<Zapis.stanje_racuna_deviznog<<endl;
+			cout<<"Prioritet: "<<Zapis.prioritet+1<<"   Transakcija: "<<Zapis.transakcija+1<<endl;
+		}
+		else
+			EnQueueQ(Zapis,red);
+		DeQueueQ(red_pomocni);
+	}
+	delete red_pomocni;
+	Glavni(red);
+}
+
+void Brisanje(queue *red)
+{
+	if(IsEmptyQ(red))
+		return;
+	queue *red_pomocni = new queue;
+	InitQ(red_pomocni);
+	while(!IsEmptyQ(red)){
+		EnQueueQ(FrontQ(red), red_pomocni);
+		DeQueueQ(red);
+	}
+	cout<<"Izbaceni iz reda:"<<endl<<endl;
+	while(!IsEmptyQ(red_pomocni)){
+		zapis Zapis=FrontQ(red_pomocni);
+		if((Zapis.godina_rodjenja>1972 && Zapis.prioritet==3  &&  	Zapis.stanje_racuna_tekuceg<100 && Zapis.transakcija==0) ||
+		   (Zapis.prioritet==0  &&  Zapis.stanje_racuna_tekuceg>5000 && Zapis.transakcija==1)){
+			cout<<endl<<"Ime i prezime klijenta: "<<Zapis.ime<<" "<<Zapis.prezime<<endl;
+			cout<<"Datum rodjenja D/M/G: "<<Zapis.dan_rodjenja<<"/"<<Zapis.mjesec_rodjenja<<"/"<<Zapis.godina_rodjenja<<endl;
+			cout<<"Stanje na racunu: "<<endl;
+			cout<<"TEKUCI: "<<Zapis.stanje_racuna_tekuceg<<endl;
+			cout<<"DEVIZNI: "<<Zapis.stanje_racuna_deviznog<<endl;
+			cout<<"Prioritet: "<<Zapis.prioritet+1<<"   Transakcija: "<<Zapis.transakcija+1<<endl;
+		}
+		else
+			EnQueueQ(Zapis,red);
+		DeQueueQ(red_pomocni);
+	}
+	delete red_pomocni;
+	
+	cout<<"Stanje nakon brisanja..."<<endl;
+	Glavni(red);
+}
+
+void Otvori(queue *red, int bb)
+{
+	if(IsEmptyQ(red))
+		return;
+	
+	zapis Zapis=FrontQ(red);
+	DeQueueQ(red);
+	bool izbacen=false;
+	if(bb>0) {
+		izbacen=true;
+		cout<<endl<<"Ime i prezime klijenta: "<<Zapis.ime<<" "<<Zapis.prezime<<endl;
+		cout<<"Datum rodjenja D/M/G: "<<Zapis.dan_rodjenja<<"/"<<Zapis.mjesec_rodjenja<<"/"<<Zapis.godina_rodjenja<<endl;
+		cout<<"Stanje na racunu: "<<endl;
+		cout<<"TEKUCI: "<<Zapis.stanje_racuna_tekuceg<<endl;
+		cout<<"DEVIZNI: "<<Zapis.stanje_racuna_deviznog<<endl;
+		cout<<"Prioritet: "<<Zapis.prioritet+1<<"   Transakcija: "<<Zapis.transakcija+1<<endl;
+		bb--;
+	}
+	
+	Otvori(red, bb);
+	if(izbacen==false)
+		EnQueueQ(Zapis,red);
+}
+
+int main()
+{
+	int izbor, broj_30;
+
+	queue *red = new queue;
+	InitQ(red);
+	if(IsEmptyQ(red)) cout<<"Red je prazan."<<endl;
+	
+	srand(time(0));
+	
+	cout<<"Zapisi se generiraju....."<<endl;
+	polje=NULL;
+	Generiranje_zapisa();
+	
+	do{
+	cout << endl;
+	cout<< " _______ IZBORNIK_______"<<endl;
+	cout<< "1. Unos novih klijenata"<<endl;
+	cout<< "2. Brze transakcije"<<endl;
+	cout<< "3. Brisanje elementa"<<endl;
+	cout<< "4. Novi salter"<<endl;
+	cout<< "5. Glavni red"<<endl;
+	cout<< "6. Brisanje glavnog reda"<<endl;
+	cout<< "7. Generiranje dodatnih zapisa"<<endl;
+	cout<< "9. Izlaz iz programa"<<endl;
+	cout<< " ________________________"<<endl;
+	cout<< " Unesite vas izbor: ";
+	cin>>izbor;
+
+	switch(izbor){
+		case 1:
+		Novi(red);
+		break;
+
+		case 2:
+		Brza_transakcija(red);
+		break;
+
+		case 3:
+		Brisanje(red);
+		break;
+
+		case 4:
+		if(IsEmptyQ(red))
+			break;
+		broj_30=Okreni(red)*(30.0/100.0);
+		cout<<"Pomocni red "<<endl<<endl;
+		Otvori(red, broj_30);
+		cout<<"Glavni red"<<endl<<endl;
+		Glavni(red);
+		break;
+		
+		case 5:
+		Glavni(red);
+		break;
+		
+		case 6:
+		while(!IsEmptyQ(red))
+			DeQueueQ(red);
+		break;
+		
+		case 7:
+		delete[] polje;
+		Generiranje_zapisa();
+		break;
+		
+		case 9:
+		break;
+		
+		default:
+		break;
+	}
+	
+	}while(izbor!=9);
+	system("pause");
+	return 0;
+}
